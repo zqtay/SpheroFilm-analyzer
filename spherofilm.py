@@ -8,8 +8,7 @@ from scipy.ndimage import distance_transform_edt as dt
 from scipy.ndimage import binary_fill_holes as bfh
 from skimage import io
 from skimage.measure import label,regionprops
-from skimage.morphology import disk,binary_closing, \
-    remove_small_holes,remove_small_objects,watershed,
+from skimage.morphology import disk,binary_closing,remove_small_holes,remove_small_objects,watershed
 from skimage.morphology._flood_fill import flood_fill
 from skimage.segmentation import clear_border
 from skimage.feature import peak_local_max
