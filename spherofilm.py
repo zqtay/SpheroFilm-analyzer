@@ -36,6 +36,19 @@ def region_max_area(labeled):
     region = regions[region_index]
     return (region_index,region)
 
+def remove_border(array):
+    distance = dt(array)
+    local_maxi = peak_local_max(distance, indices=False, footprint=np.ones((3, 3)),labels=array)
+    markers = label(local_maxi)
+    labels = watershed(-distance, markers, mask=array)
+    im_cleared = remove_small_objects(clear_border(labels,buffer_size=5,bgval=0)*circle_mask != 0,min_size=64)
+    return im_cleared
+
+def spheroid_select(array):
+    im_cleared_labeled = label(array)
+    region_index,region=region_max_area(im_cleared_labeled)
+    im_final = binary_closing(im_cleared_labeled == region_index+1,selem=disk(4))
+    return im_final
 
 def im_proc(filename):
     '''Main function of the image processing.'''
@@ -62,20 +75,22 @@ def im_proc(filename):
     im_gauss=remove_small_holes(im_gauss,min_size=64)
 
     # Border gap fill
+    im_gauss_gap = im_gauss.copy()
     for pos in [(0,0),(0,370),(370,0),(370,370)]:
-        im_gauss=flood_fill(im_gauss.astype('int'),pos,1)
+        im_gauss_gap=flood_fill(im_gauss_gap.astype('int'),pos,1)
 
-    # Isolate spheroid from borders
-    distance = dt(im_gauss)
-    local_maxi = peak_local_max(distance, indices=False, footprint=np.ones((3, 3)),labels=im_gauss)
-    markers = label(local_maxi)
-    labels = watershed(-distance, markers, mask=im_gauss)
-    im_cleared = remove_small_objects(clear_border(labels,buffer_size=5,bgval=0)*circle_mask != 0,min_size=64)
-
-    # Select largest area region as spheroid
-    im_cleared_labeled = label(im_cleared)
-    region_index,region=region_max_area(im_cleared_labeled)
-    im_final = binary_closing(im_cleared_labeled == region_index+1,selem=disk(4))
+    # Decision tree for border removal and spheroid isolation
+    # If the spheroid is too confluent, gap fill won't be used in clear_border
+    # If problem still persist, a simple circle mask will be applied to roughly remove the border
+    try:
+        im_cleared = remove_border(im_gauss_gap)
+        im_final = spheroid_select(im_cleared)
+    except ValueError:
+        try:
+            im_cleared = remove_border(im_gauss)
+            im_final = spheroid_select(im_cleared)
+        except ValueError:
+            im_final = circle_mask*im_gauss
 
     # Spheroid properties
     spheroid = regionprops(im_final.astype('int'))[0]
