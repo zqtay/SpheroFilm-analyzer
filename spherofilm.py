@@ -9,7 +9,7 @@ from scipy.ndimage import binary_fill_holes as bfh
 from skimage import io
 from skimage.measure import label,regionprops
 from skimage.morphology import disk,binary_closing, \
-    remove_small_holes,remove_small_objects,watershed
+    remove_small_holes,remove_small_objects,watershed,
 from skimage.morphology._flood_fill import flood_fill
 from skimage.segmentation import clear_border
 from skimage.feature import peak_local_max
@@ -76,14 +76,16 @@ def im_proc(filename):
     # Select largest area region as spheroid
     im_cleared_labeled = label(im_cleared)
     region_index,region=region_max_area(im_cleared_labeled)
+    im_final = binary_closing(im_cleared_labeled == region_index+1,selem=disk(4))
 
-    im_final = (im_cleared_labeled == region_index+1)
-    im_gray = 255 - im_center
     # Spheroid properties
-    spheroid_maj_ax = round(region.major_axis_length,3)
-    spheroid_min_ax = round(region.minor_axis_length,3)
-    spheroid_area = region.area
-    spheroid_peri = round(region.perimeter,3)
+    spheroid = regionprops(im_final.astype('int'))[0]
+    spheroid_maj_ax = round(spheroid.major_axis_length,3)
+    spheroid_min_ax = round(spheroid.minor_axis_length,3)
+    spheroid_area = spheroid.area
+    spheroid_peri = round(spheroid.perimeter,3)
+
+    im_gray = 255 - im_center
 
     return im_final, im_gray, spheroid_maj_ax, spheroid_min_ax, spheroid_peri, spheroid_area
 
@@ -185,9 +187,10 @@ prop_label = {'maj_ax':'Spheroid Major Axis ($\mu m$)',
 fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(15,7))
 for n,ax in enumerate(axes.ravel()):
     prop=df.columns[n]
-    ax.errorbar(df_stats.index, df_stats['mean'][prop], df_stats['std'][prop], fmt='-o')
+    ax.errorbar(df_stats.index, df_stats['mean'][prop], df_stats['std'][prop], fmt='-o', label='Spheroids')
     ax.set_xlabel('Day Number')
     ax.set_ylabel(prop_label[prop])
+    ax.ticklabel_format(axis='y',style='sci',scilimits=(-3,5))
 plt.setp(axes, xticks=df.index.levels[0])
 plt.tight_layout()
 
