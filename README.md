@@ -1,7 +1,8 @@
 # SpheroFilm-analyzer
 An image processing and data analysis tool for spheroids cultured in INCYTO SpheroFilm with 300 um diameter.
 The script has been tested and utilised with microscopic images taken from phase contrast microscope at 4x magnification. The input images are to be at 2048 x 1536 in dimension. Sample images can be found in ".\sample". The output images (greyscale and binary) are cropped from input images at 371 x 371 in dimension. This size is sufficient to contain the spheroids from the sample images.  
-In the event of input images with different dimension than the sample images, or the spheroid images were taken at different magnification, the following parameters can be changed as the user sees fit:
+
+In the event of the input images having different dimension than the sample images, or the spheroid images were taken at different magnification, the following parameters can be changed as the user sees fit:
 
 In **PROCESS PREPARATION > Variables and functions definition**  
 ``circle_mask = np.pad(disk(165), ((20, 20),(20, 20)), 'constant', constant_values=0)``  
